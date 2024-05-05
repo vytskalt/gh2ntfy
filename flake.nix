@@ -26,12 +26,28 @@
         pwd = ./.;
         src = ./.;
         modules = ./gomod2nix.toml;
+        CGO_ENABLED = "0";
+        ldflags = [ "-s" "-w" ];
+        flags = [ "-trimpath" ];
+
+        nativeBuildInputs = [ pkgs.removeReferencesTo ];
+        postInstall = ''
+          remove-references-to -t ${pkgs.tzdata} $out/bin/gh2ntfy
+          remove-references-to -t ${pkgs.mailcap} $out/bin/gh2ntfy
+          remove-references-to -t ${pkgs.iana-etc} $out/bin/gh2ntfy
+        '';
       };
 
       image = pkgs.dockerTools.buildLayeredImage {
         name = "ghcr.io/vytskalt/gh2ntfy";
         tag = package.version;
-        config.Cmd = [ "${package}/bin/gh2ntfy" ];
+        config = {
+          Cmd = [ "${package}/bin/gh2ntfy" ];
+          Env = [
+            "GIT_SSL_CAINFO=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+            "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+          ];
+        };
       };
     });
 
