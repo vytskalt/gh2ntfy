@@ -83,7 +83,7 @@ loop:
 		}
 
 		if forwarded > 0 {
-			log.Printf("Forwarded %v notifications\n", forwarded)
+			log.Printf("Forwarded %v notification(s)\n", forwarded)
 		}
 
 		afterDate = resp.Date
@@ -150,12 +150,6 @@ func fetchNotifications(ctx context.Context, token, afterDate string) (*Notifica
 	}
 	defer resp.Body.Close()
 
-	date := resp.Header.Get("Date")
-	pollInterval, err := strconv.Atoi(resp.Header.Get("X-Poll-Interval"))
-	if err != nil {
-		return nil, err
-	}
-
 	var notifications []Notification
 	if resp.StatusCode == 200 {
 		err = json.NewDecoder(resp.Body).Decode(&notifications)
@@ -164,6 +158,12 @@ func fetchNotifications(ctx context.Context, token, afterDate string) (*Notifica
 		}
 	} else if resp.StatusCode != 304 {
 		return nil, fmt.Errorf("received unexpected status code %v when trying to poll for notifications", resp.StatusCode)
+	}
+
+	date := resp.Header.Get("Date")
+	pollInterval, err := strconv.Atoi(resp.Header.Get("X-Poll-Interval"))
+	if err != nil {
+		return nil, err
 	}
 
 	return &NotificationsResponse{
